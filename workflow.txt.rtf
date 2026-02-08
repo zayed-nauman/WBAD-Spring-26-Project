@@ -14,3 +14,23 @@ Workflow 1: (Add Text Here)\
 Workflow 2: (Add Text Here)\
 \
 Workflow 3: (Add Text Here)}
+Workflow 3: Refund Management Workflow
+The key components of the workflow have been specified in BOLD.
+The lifecycle steps have been specified with underlines.
+The third workflow we will be implementing in our project focuses on the Return/Refund mechanism, which completes the operational loop of the courier delivery management system. This workflow ensures that failed deliveries, returned shipments, and prepaid refund cases are handled in a structured and trackable manner within the application.
+Return & Refund Lifecycle Stages:
+	•	Return Initiated
+	◦	RETURN CASE CREATION
+	•	Return In Transit
+	•	Returned & Received
+	•	Inspection & Decision
+	◦	Damaged/Resellable
+	•	Refund Process
+	•	Refund Requested to Refunded
+	•	Restocked
+The refund management workflow begins when an order transitions from the forward delivery lifecycle into a return state, typically after a status such as Delivered/Failed goes to Returned, called the Return Initiated stage. At this stage, a RETURN CASE CREATION and reason is recorded in the system. The dispatcher must specify a reason for return, such as customer not available, refusal to accept COD, incorrect address, damaged parcel, or other operational issues. This ensures traceability and documentation for both vendor and courier management. This marks the beginning of the reverse logistics process. The parcel then moves into Return In Transit, where it is physically being transported back to the vendor warehouse or depot. These states are manually toggled within the system to reflect the real-life condition of the shipment.
+When the returned parcel reaches the warehouse, the status is updated to Returned & Received. At this point, the system requires an Human Inspection & Decision stage. During inspection, the returned item is evaluated and marked either Damaged/Resellable. This classification directly impacts both refund handling and inventory adjustment. If the item is marked resellable, it is eligible to be re-entered into the vendor’s inventory. If marked damaged, it will not be restocked and may be recorded as a loss.
+The Refund Process is triggered specifically for prepaid orders. In such cases, the refund lifecycle follows a controlled state transition from Refund Requested to Refunded. This ensures that refunds are not automatically processed without confirmation and that there is a clear record of refund initiation and completion. For COD orders, refunds are generally not applicable unless special administrative approval is granted.
+Following inspection, if the product is marked RESELLABLE, the system performs an automatic Restocked operation. This reflects a change inventory count and closes the operational loop, reinforcing the full loop.
+Through these structured stages, the refund management workflow completes the courier system’s operational cycle by handling reverse logistics, and inventory restoration in a controlled, trackable, and real-world replicable manner.
+
