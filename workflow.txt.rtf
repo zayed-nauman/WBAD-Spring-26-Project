@@ -9,9 +9,11 @@
 Project Domain: Courier Delivery Management Web-Based Application\
 Group Members: Muhammad Zayed Nauman (29047), Gehna Bhatia (29054), Arbaaz Murtaza (29050)\
 \
+
 Workflow 1: Order Lifecycle Management
 
 Order Lifecycle Stages:
+
 •	Order Received
 ◦	Payment Status [Paid/COD]
 ◦	BLACKLISTED NUMBERS VALIDATION
@@ -47,6 +49,17 @@ the shipment moves into In Transit, followed by Out for Delivery and Delivery At
 progress. The final stage in the forward flow is Delivered or Failed/Returned. If successfully delivered, the order lifecycle closes then and there. If delivery fails, the order transitions automatically direct 
 into the returns management workflow described ahead.
 
-Workflow 2: (Add Text Here)\
-\
+Workflow 2: Rider Assignment Workflow
+
+The second workflow we will be working on in our project is the core of a courier delivery management system which is Rider assignment for orders. It begins after the order reaches a state such as “Ready for Pickup.” Once the order is mapped, the system organizes riders based on fixed locations or depots, meaning each rider belongs to a defined geographical zone. Orders are filtered by zone to ensure assignments are location-appropriate. This implementation plan for this assignment is an intermediate approach involving a Zone-based Rider Pool used with Scored Recommendations. The user will manually confirm one of the riders displayed according to the ranked results, these ranked results may be subject to rider’s availability and capacity. At a glance the key steps in determining the rider, are:
+	•	Rider Locations & Delivery Address Mapping
+	•	Scored Recommendations based on a Distance Metric between Rider’s Location & Delivery Address
+	•	Manual Confirmation
+For each eligible order, the system calculates the distance between the order location and each rider in the zone using a distance metric. Riders are ranked based on proximity, with the closest rider receiving the highest recommendation score. In the interface, when a dispatcher clicks an order, a side panel displays a specific number for example, top three recommended riders, along with metrics such as:
+	•	Distance (e.g., 24.2 km)
+	•	Current Load (e.g., 3/28 orders)
+	•	Capacity Usage (e.g., 18kg / 40kg)
+This allows informed and semi-intelligent assignment decisions.
+Each rider has predefined capacity limits reflecting truck size and maximum order count. If a rider has reached their limit, delivering another order, or is unavailable (e.g., shift ended), the system automatically considers the next ranked rider in the distance list. This ensures load balancing and manages assignment equally amongst the riders. Although recommendations are automated, final assignment is done through manual confirmation by the dispatcher. This structure tries to closely replicate a real life scenario of courier operations with incorporating a ranking logic.
+
 Workflow 3: (Add Text Here)}
