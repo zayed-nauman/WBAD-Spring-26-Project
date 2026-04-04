@@ -274,7 +274,7 @@ const run = async () => {
       headers: outsiderHeaders,
       body: JSON.stringify({
         orderId: prepaidOrder.id,
-        customerId: outsiderCustomer.id,
+        customerId: customer.id,
         reason: 'Should fail ownership check',
         paymentType: 'PREPAID',
       }),
