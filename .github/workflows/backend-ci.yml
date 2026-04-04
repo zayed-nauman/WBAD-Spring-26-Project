@@ -12,6 +12,7 @@ on:
 
 jobs:
   backend-smoke-test:
+    if: github.event_name == 'push' && github.ref_name == 'main'
     runs-on: ubuntu-latest
 
     services:
@@ -63,3 +64,56 @@ jobs:
 
       - name: Run backend smoke test
         run: npm run test:ci
+
+  workflow1-test:
+    if: |
+      (github.event_name == 'push' && github.ref_name == 'Workflow1--Order-Lifecycle-Management') ||
+      (github.event_name == 'pull_request' && github.head_ref == 'Workflow1--Order-Lifecycle-Management')
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: wbad_db
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: admin
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U admin -d wbad_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    defaults:
+      run:
+        working-directory: backend
+
+    env:
+      DATABASE_URL: postgresql://admin:admin@localhost:5432/wbad_db?schema=public
+      JWT_SECRET: ci-secret
+      PORT: 3103
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npm run prisma:generate
+
+      - name: Sync Prisma schema to CI database
+        run: npx prisma db push
+
+      - name: Run Workflow 1 independent test
+        run: npm run test:ci:wf1
