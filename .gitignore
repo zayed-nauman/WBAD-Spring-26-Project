@@ -1,8 +1,0 @@
-
-milestone3.md
-.DS_Store
-/backend/.DS_Store
-/generated/prisma
-
-/backend/.env
-/backend/node_modules
