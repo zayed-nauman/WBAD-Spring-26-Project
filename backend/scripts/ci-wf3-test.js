@@ -76,6 +76,16 @@ const run = async () => {
     });
     createdUserIds.push(customer.id);
 
+    const outsiderCustomer = await prisma.user.create({
+      data: {
+        name: `wf3-outsider-${unique}`,
+        email: `wf3.outsider.${unique}@ci.local`,
+        password: 'password123',
+        role: 'CUSTOMER',
+      },
+    });
+    createdUserIds.push(outsiderCustomer.id);
+
     const prepaidOrder = await prisma.order.create({
       data: {
         senderName: 'Sender WF3',
@@ -114,6 +124,44 @@ const run = async () => {
     });
     createdOrderIds.push(codOrder.id);
 
+    const damagedOrder = await prisma.order.create({
+      data: {
+        senderName: 'Sender WF3 Damaged',
+        senderPhone: '03004444444',
+        receiverName: 'Receiver WF3 Damaged',
+        receiverPhone: '03005555555',
+        customerName: 'WF3 Customer Damaged',
+        phoneNumber: '03005555555',
+        address: 'Test Address 3',
+        city: 'Karachi',
+        items: `WF3-DAMAGED-Item-${unique}`,
+        weightKg: 1,
+        paymentType: 'PREPAID',
+        status: 'FAILED',
+        createdBy: customer.id,
+      },
+    });
+    createdOrderIds.push(damagedOrder.id);
+
+    const deleteOrder = await prisma.order.create({
+      data: {
+        senderName: 'Sender WF3 Delete',
+        senderPhone: '03006666666',
+        receiverName: 'Receiver WF3 Delete',
+        receiverPhone: '03007777777',
+        customerName: 'WF3 Customer Delete',
+        phoneNumber: '03007777777',
+        address: 'Test Address 4',
+        city: 'Karachi',
+        items: `WF3-DELETE-Item-${unique}`,
+        weightKg: 1,
+        paymentType: 'PREPAID',
+        status: 'FAILED',
+        createdBy: customer.id,
+      },
+    });
+    createdOrderIds.push(deleteOrder.id);
+
     const dispatcherHeaders = {
       Authorization: `Bearer ${jwt.sign({ id: dispatcher.id, role: 'DISPATCHER' }, JWT_SECRET, { expiresIn: '1h' })}`,
       'Content-Type': 'application/json',
@@ -124,6 +172,10 @@ const run = async () => {
     };
     const customerHeaders = {
       Authorization: `Bearer ${jwt.sign({ id: customer.id, role: 'CUSTOMER' }, JWT_SECRET, { expiresIn: '1h' })}`,
+      'Content-Type': 'application/json',
+    };
+    const outsiderHeaders = {
+      Authorization: `Bearer ${jwt.sign({ id: outsiderCustomer.id, role: 'CUSTOMER' }, JWT_SECRET, { expiresIn: '1h' })}`,
       'Content-Type': 'application/json',
     };
     const riderHeaders = {
@@ -155,6 +207,13 @@ const run = async () => {
 
     const prepaidReturnCaseId = createPrepaidCase.data?.data?.id;
     assert(typeof prepaidReturnCaseId === 'number', 'Missing prepaid returnCase ID');
+
+    const invalidJump = await request(`/api/return-cases/${prepaidReturnCaseId}/transition`, {
+      method: 'PATCH',
+      headers: dispatcherHeaders,
+      body: JSON.stringify({ returnStatus: 'REFUNDED' }),
+    });
+    assert(invalidJump.status === 400, 'Invalid transition jump should be rejected');
 
     const prepaidTransitions = [
       ['RETURN_IN_TRANSIT', {}],
@@ -193,6 +252,35 @@ const run = async () => {
     assert(prepaidHistory.status === 200, 'Customer should access own return history');
     assert(Array.isArray(prepaidHistory.data?.data) && prepaidHistory.data.data.length > 0, 'History should contain records');
 
+    const historyHasTransition = prepaidHistory.data.data.some(
+      (entry) => entry.action === 'STATUS_TRANSITION' && entry.fromStatus && entry.toStatus,
+    );
+    assert(historyHasTransition, 'History should include detailed STATUS_TRANSITION records');
+
+    const outsiderBlockedOnCase = await request(`/api/return-cases/${prepaidReturnCaseId}`, {
+      method: 'GET',
+      headers: outsiderHeaders,
+    });
+    assert(outsiderBlockedOnCase.status === 403, 'Outsider customer must not read another customer return case');
+
+    const outsiderBlockedOnHistory = await request(`/api/return-cases/${prepaidReturnCaseId}/history`, {
+      method: 'GET',
+      headers: outsiderHeaders,
+    });
+    assert(outsiderBlockedOnHistory.status === 403, 'Outsider customer must not read another customer history');
+
+    const customerWrongOwnerCreate = await request('/api/return-cases', {
+      method: 'POST',
+      headers: outsiderHeaders,
+      body: JSON.stringify({
+        orderId: prepaidOrder.id,
+        customerId: outsiderCustomer.id,
+        reason: 'Should fail ownership check',
+        paymentType: 'PREPAID',
+      }),
+    });
+    assert(customerWrongOwnerCreate.status === 403, 'Customer should not create return case for another user order');
+
     const createCodCase = await request('/api/return-cases/auto-create', {
       method: 'POST',
       headers: dispatcherHeaders,
@@ -208,6 +296,20 @@ const run = async () => {
 
     const codReturnCaseId = createCodCase.data?.data?.id;
     assert(typeof codReturnCaseId === 'number', 'Missing COD returnCase ID');
+
+    const codAutoCreateAgain = await request('/api/return-cases/auto-create', {
+      method: 'POST',
+      headers: dispatcherHeaders,
+      body: JSON.stringify({
+        orderId: codOrder.id,
+        customerId: customer.id,
+        reason: 'COD refused second request',
+        paymentType: 'COD',
+        orderStatus: 'FAILED',
+      }),
+    });
+    assert(codAutoCreateAgain.status === 200, 'Second auto-create for same order should return existing case');
+    assert(codAutoCreateAgain.data?.data?.id === codReturnCaseId, 'Duplicate auto-create should return same case id');
 
     const codTransitions = [
       ['RETURN_IN_TRANSIT', {}],
@@ -245,6 +347,95 @@ const run = async () => {
       body: JSON.stringify({ returnStatus: 'REFUND_REQUESTED' }),
     });
     assert(codRefundAllowed.status === 200, 'COD refund should proceed after admin approval');
+
+    const codHistory = await request(`/api/return-cases/${codReturnCaseId}/history`, {
+      method: 'GET',
+      headers: dispatcherHeaders,
+    });
+    assert(codHistory.status === 200, 'Dispatcher should fetch COD history');
+    const hasCodApprovalEntry = codHistory.data?.data?.some((entry) => entry.action === 'COD_REFUND_APPROVED');
+    assert(hasCodApprovalEntry, 'COD history should include approval entry');
+
+    const createDamagedCase = await request('/api/return-cases', {
+      method: 'POST',
+      headers: customerHeaders,
+      body: JSON.stringify({
+        orderId: damagedOrder.id,
+        customerId: customer.id,
+        reason: 'Item returned damaged',
+        paymentType: 'PREPAID',
+      }),
+    });
+    assert(createDamagedCase.status === 201, `Damaged-case create failed: ${JSON.stringify(createDamagedCase.data)}`);
+
+    const damagedReturnCaseId = createDamagedCase.data?.data?.id;
+    assert(typeof damagedReturnCaseId === 'number', 'Missing damaged returnCase ID');
+
+    const damagedTransitions = [
+      ['RETURN_IN_TRANSIT', {}],
+      ['RETURNED_RECEIVED', {}],
+      ['INSPECTION_DECISION', { inspectionDecision: 'DAMAGED' }],
+    ];
+
+    for (const [status, metadata] of damagedTransitions) {
+      const response = await request(`/api/return-cases/${damagedReturnCaseId}/transition`, {
+        method: 'PATCH',
+        headers: dispatcherHeaders,
+        body: JSON.stringify({ returnStatus: status, ...metadata }),
+      });
+      assert(response.status === 200, `Damaged transition ${status} failed: ${JSON.stringify(response.data)}`);
+    }
+
+    const damagedDetail = await request(`/api/return-cases/${damagedReturnCaseId}`, {
+      method: 'GET',
+      headers: dispatcherHeaders,
+    });
+    assert(damagedDetail.status === 200, 'Failed to fetch damaged return case detail');
+    assert(
+      Array.isArray(damagedDetail.data?.data?.lossRecords) && damagedDetail.data.data.lossRecords.length > 0,
+      'DAMAGED flow should create loss record',
+    );
+    assert(damagedDetail.data?.data?.restocked === false, 'DAMAGED case must not be marked restocked');
+
+    const damagedRestockBlocked = await request(`/api/return-cases/${damagedReturnCaseId}/transition`, {
+      method: 'PATCH',
+      headers: dispatcherHeaders,
+      body: JSON.stringify({ returnStatus: 'RESTOCKED' }),
+    });
+    assert(damagedRestockBlocked.status === 400, 'DAMAGED case should not be allowed to transition to RESTOCKED');
+
+    const createDeleteCase = await request('/api/return-cases', {
+      method: 'POST',
+      headers: customerHeaders,
+      body: JSON.stringify({
+        orderId: deleteOrder.id,
+        customerId: customer.id,
+        reason: 'Delete behavior test',
+        paymentType: 'PREPAID',
+      }),
+    });
+    assert(createDeleteCase.status === 201, `Delete-case create failed: ${JSON.stringify(createDeleteCase.data)}`);
+
+    const deleteCaseId = createDeleteCase.data?.data?.id;
+    assert(typeof deleteCaseId === 'number', 'Missing delete-test returnCase ID');
+
+    const customerDeleteBlocked = await request(`/api/return-cases/${deleteCaseId}`, {
+      method: 'DELETE',
+      headers: customerHeaders,
+    });
+    assert(customerDeleteBlocked.status === 403, 'Customer must not delete return cases');
+
+    const dispatcherDelete = await request(`/api/return-cases/${deleteCaseId}`, {
+      method: 'DELETE',
+      headers: dispatcherHeaders,
+    });
+    assert(dispatcherDelete.status === 200, 'Dispatcher should be allowed to delete return case');
+
+    const deletedFetch = await request(`/api/return-cases/${deleteCaseId}`, {
+      method: 'GET',
+      headers: dispatcherHeaders,
+    });
+    assert(deletedFetch.status === 404, 'Deleted return case should not be retrievable');
 
     console.log('WF3 independent test passed');
   } finally {
