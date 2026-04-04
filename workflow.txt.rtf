@@ -1,14 +1,6 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2822
-\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
-{\colortbl;\red255\green255\blue255;}
-{\*\expandedcolortbl;;}
-\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
-
-\f0\fs24 \cf0 WBAD-Spring-26-Project \
 Project Domain: Courier Delivery Management Web-Based Application\
-Group Members: Muhammad Zayed Nauman (29047), Gehna Bhatia (29054), Arbaaz Murtaza (29050)\
-\
+Group Members: Muhammad Zayed Nauman (29047), Gehna Bhatia (29054), Arbaaz Murtaza (29050)
+
 
 Workflow 1: Order Lifecycle Management
 
@@ -49,48 +41,16 @@ the shipment moves into In Transit, followed by Out for Delivery and Delivery At
 progress. The final stage in the forward flow is Delivered or Failed/Returned. If successfully delivered, the order lifecycle closes then and there. If delivery fails, the order transitions automatically direct 
 into the returns management workflow described ahead.
 
-
 Workflow 2: Rider Assignment Workflow
 
-The second workflow we will be working on in our project is the core of a courier delivery management system which is Rider assignment for orders. It begins after the order reaches a state such as “Ready for Pickup.”
-Once the order is mapped, the system organizes riders based on fixed locations or depots, meaning each rider belongs to a defined geographical zone. Orders are filtered by zone to ensure assignments are 
-location-appropriate. This implementation plan for this assignment is an intermediate approach involving a Zone-based Rider Pool used with Scored Recommendations. The user will manually confirm one of the riders 
-displayed according to the ranked results, these ranked results may be subject to rider’s availability and capacity. At a glance the key steps in determining the rider, are:
-	
-  •	Rider Locations & Delivery Address Mapping
-	•	Scored Recommendations based on a Distance Metric between Rider’s Location & Delivery Address
-	•	Manual Confirmation
-
-For each eligible order, the system calculates the distance between the order location and each rider in the zone using a distance metric. Riders are ranked based on proximity, with the closest rider receiving the highest
-recommendation score. In the interface, when a dispatcher clicks an order, a side panel displays a specific number for example, top three recommended riders, along with metrics such as:
-	
-  •	Distance (e.g., 24.2 km)
-	•	Current Load (e.g., 3/28 orders)
-	•	Capacity Usage (e.g., 18kg / 40kg)
-  
+The second workflow we will be working on in our project is the core of a courier delivery management system which is Rider assignment for orders. It begins after the order reaches a state such as “Ready for Pickup.” Once the order is mapped, the system organizes riders based on fixed locations or depots, meaning each rider belongs to a defined geographical zone. Orders are filtered by zone to ensure assignments are location-appropriate. This implementation plan for this assignment is an intermediate approach involving a Zone-based Rider Pool used with Scored Recommendations. The user will manually confirm one of the riders displayed according to the ranked results, these ranked results may be subject to rider’s availability and capacity. At a glance the key steps in determining the rider, are:
+@@ -24,5 +62,4 @@ For each eligible order, the system calculates the distance between the order lo
 This allows informed and semi-intelligent assignment decisions.
-Each rider has predefined capacity limits reflecting truck size and maximum order count. If a rider has reached their limit, delivering another order, or is unavailable (e.g., shift ended), the system automatically considers
-the next ranked rider in the distance list. This ensures load balancing and manages assignment equally amongst the riders. Although recommendations are automated, final assignment is done through manual confirmation by the 
-dispatcher. This structure tries to closely replicate a real life scenario of courier operations with incorporating a ranking logic.
+Each rider has predefined capacity limits reflecting truck size and maximum order count. If a rider has reached their limit, delivering another order, or is unavailable (e.g., shift ended), the system automatically considers the next ranked rider in the distance list. This ensures load balancing and manages assignment equally amongst the riders. Although recommendations are automated, final assignment is done through manual confirmation by the dispatcher. This structure tries to closely replicate a real life scenario of courier operations with incorporating a ranking logic.
 
+\
+Workflow 3: 
 
-Workflow 3: Refund Management Workflow
-
-The third workflow we will be implementing in our project focuses on the Return/Refund mechanism, which completes the operational loop of the courier delivery management system. This workflow ensures that failed deliveries, 
-returned shipments, and prepaid refund cases are handled in a structured and trackable manner within the application.
-
-Return & Refund Lifecycle Stages:
-
-	•	Return Initiated
-	◦	RETURN CASE CREATION
-	•	Return In Transit
-	•	Returned & Received
-	•	Inspection & Decision
-	◦	Damaged/Resellable
-	•	Refund Process
-	•	Refund Requested to Refunded
-	•	Restocked
-  
 The refund management workflow begins when an order transitions from the forward delivery lifecycle into a return state, typically after a status such as Delivered/Failed goes to Returned, called the Return Initiated stage. 
 At this stage, a RETURN CASE CREATION and reason is recorded in the system. The dispatcher must specify a reason for return, such as customer not available, refusal to accept COD, incorrect address, damaged parcel, or other 
 operational issues. This ensures traceability and documentation for both vendor and courier management. This marks the beginning of the reverse logistics process. The parcel then moves into Return In Transit, where it is 
@@ -101,5 +61,4 @@ damaged, it will not be restocked and may be recorded as a loss.
 The Refund Process is triggered specifically for prepaid orders. In such cases, the refund lifecycle follows a controlled state transition from Refund Requested to Refunded. This ensures that refunds are not automatically 
 processed without confirmation and that there is a clear record of refund initiation and completion. For COD orders, refunds are generally not applicable unless special administrative approval is granted.
 Following inspection, if the product is marked RESELLABLE, the system performs an automatic Restocked operation. This reflects a change inventory count and closes the operational loop, reinforcing the full loop.
-Through these structured stages, the refund management workflow completes the courier system’s operational cycle by handling reverse logistics, and inventory restoration in a controlled, trackable, and real-world 
-replicable manner.
+Through these structured stages, the refund management workflow completes the courier system’s operational cycle by handling reverse logistics, and inventory restoration in a controlled, trackable, and real-world replicable manner.

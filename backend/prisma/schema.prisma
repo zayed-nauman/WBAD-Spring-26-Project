@@ -1,0 +1,223 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  DISPATCHER
+  RIDER
+  CUSTOMER
+}
+
+enum PaymentType {
+  PREPAID
+  COD
+}
+
+enum OrderStatus {
+  ORDER_RECEIVED
+  FULFILLMENT
+  LABEL_GENERATION
+  READY_FOR_PICKUP
+  PICKUP_IN_PROGRESS
+  PICKED_UP
+  SHIPMENT_DISPATCHED
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERY_ATTEMPT
+  DELIVERED
+  FAILED
+  RETURNED
+}
+
+enum FulfillmentResult {
+  FULFILLED
+  UNFULFILLED
+}
+
+enum ReturnStatus {
+  RETURN_INITIATED
+  RETURN_IN_TRANSIT
+  RETURNED_RECEIVED
+  INSPECTION_DECISION
+  REFUND_PROCESS
+  REFUND_REQUESTED
+  REFUNDED
+  RESTOCKED
+}
+
+enum InspectionDecision {
+  PENDING
+  DAMAGED
+  RESELLABLE
+}
+
+enum RefundStatus {
+  NOT_APPLICABLE
+  REQUESTED
+  REFUNDED
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(CUSTOMER)
+  riderId   Int?
+  createdAt DateTime @default(now())
+
+  orders    Order[]
+}
+
+model BlacklistedNumber {
+  id          Int      @id @default(autoincrement())
+  phoneNumber String   @unique
+  reason      String?
+  createdAt   DateTime @default(now())
+}
+
+model Order {
+  id                 Int               @id @default(autoincrement())
+  trackingNumber     String            @unique @default(cuid())
+  senderName         String?
+  senderPhone        String?
+  receiverName       String
+  receiverPhone      String
+  customerName       String
+  phoneNumber        String
+  address            String
+  city               String
+  items              String
+  weightKg           Float             @default(1)
+  paymentType        PaymentType
+  codAmount          Float?
+  isFragile          Boolean           @default(false)
+  isBlacklisted      Boolean           @default(false)
+  blacklistedReason  String?
+  status             OrderStatus       @default(ORDER_RECEIVED)
+  fulfillmentResult  FulfillmentResult @default(UNFULFILLED)
+  labelGenerated     Boolean           @default(false)
+  labelGeneratedAt   DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  createdBy          Int?
+
+  user               User?             @relation(fields: [createdBy], references: [id])
+  riderAssignment    RiderAssignment?
+  returnCase         ReturnCase?
+}
+
+model Rider {
+  id            Int      @id @default(autoincrement())
+  name          String
+  phone         String   @unique
+  zone          String
+  isAvailable   Boolean  @default(true)
+  currentLoad   Int      @default(0)
+  maxLoad       Int      @default(28)
+  currentWeight Float    @default(0)
+  maxWeight     Float    @default(40)
+  latitude      Float?
+  longitude     Float?
+  createdAt     DateTime @default(now())
+
+  assignments   RiderAssignment[]
+}
+
+model RiderAssignment {
+  id              Int      @id @default(autoincrement())
+  orderId         Int      @unique
+  riderId         Int
+  assignmentNote  String?
+  assignedAt      DateTime @default(now())
+  status          String   @default("ASSIGNED")
+
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  rider           Rider    @relation(fields: [riderId], references: [id], onDelete: Cascade)
+}
+
+model Inventory {
+  id              Int      @id @default(autoincrement())
+  productName     String   @unique
+  sku             String?
+  quantity        Int      @default(0)
+  weightPerUnitKg Float    @default(1)
+  createdAt       DateTime @default(now())
+}
+
+model ReturnCase {
+  id                  Int                @id @default(autoincrement())
+  orderId             Int                @unique
+  customerId          Int?
+  reason              String
+  paymentType         PaymentType
+  orderTerminalStatus String?
+  returnStatus        ReturnStatus       @default(RETURN_INITIATED)
+  inspectionDecision  InspectionDecision @default(PENDING)
+  refundStatus        RefundStatus       @default(NOT_APPLICABLE)
+  refundAmount        Decimal?           @db.Decimal(10, 2)
+  adminApprovedForCod Boolean            @default(false)
+  restocked           Boolean            @default(false)
+  inventoryAdjustedAt DateTime?
+  lossRecordedAt      DateTime?
+  notes               String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  order               Order              @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  history             ReturnCaseHistory[]
+  inventoryAdjustments InventoryAdjustment[]
+  lossRecords         LossRecord[]
+}
+
+model ReturnCaseHistory {
+  id           Int          @id @default(autoincrement())
+  returnCaseId Int
+  action       String
+  fromStatus   ReturnStatus?
+  toStatus     ReturnStatus?
+  actorRole    String?
+  actorId      Int?
+  note         String?
+  metadata     Json?
+  createdAt    DateTime     @default(now())
+
+  returnCase   ReturnCase   @relation(fields: [returnCaseId], references: [id], onDelete: Cascade)
+
+  @@index([returnCaseId, createdAt])
+}
+
+model InventoryAdjustment {
+  id           Int        @id @default(autoincrement())
+  returnCaseId Int
+  orderId      Int
+  quantity     Int        @default(1)
+  reason       String
+  createdAt    DateTime   @default(now())
+
+  returnCase   ReturnCase @relation(fields: [returnCaseId], references: [id], onDelete: Cascade)
+
+  @@unique([returnCaseId])
+  @@index([orderId])
+}
+
+model LossRecord {
+  id           Int        @id @default(autoincrement())
+  returnCaseId Int
+  orderId      Int
+  quantity     Int        @default(1)
+  reason       String
+  notes        String?
+  createdAt    DateTime   @default(now())
+
+  returnCase   ReturnCase @relation(fields: [returnCaseId], references: [id], onDelete: Cascade)
+
+  @@unique([returnCaseId])
+  @@index([orderId])
+}
