@@ -22,11 +22,11 @@ async function generateLabelPdf(order) {
   doc.fontSize(10).text('Receiver:');
   doc.fontSize(9).text(order.customerName, { indent: 8 });
   doc.fontSize(9).text(order.phoneNumber, { indent: 8 });
-  doc.fontSize(9).text(order.address + ', ' + order.city, { indent: 8 });
+  doc.fontSize(9).text(`${order.address}, ${order.city}`, { indent: 8 });
   doc.moveDown(0.5);
 
   if (order.paymentType) {
-    doc.fontSize(9).text(`Payment: ${order.paymentType}${order.codAmount ? ' - COD: ' + order.codAmount : ''}`);
+    doc.fontSize(9).text(`Payment: ${order.paymentType}${order.codAmount ? ` - COD: ${order.codAmount}` : ''}`);
   }
 
   if (order.isFragile) {
@@ -42,12 +42,8 @@ async function generateLabelPdf(order) {
   doc.moveDown(1);
   doc.fontSize(9).text(`Generated: ${new Date().toLocaleString()}`);
 
-  // finalize
   doc.end();
-
-  // get buffer
-  const buffer = await getStreamAsBuffer(doc);
-  return buffer;
+  return getStreamAsBuffer(doc);
 }
 
 module.exports = { generateLabelPdf };
