@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { User, Lock } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Spinner from '../Common/Spinner';
 import './Login.css';
+
 import logo from '../../assets/logo.png';
 
 const Login: React.FC = () => {
@@ -26,7 +28,9 @@ const Login: React.FC = () => {
 
       console.log('Login successful:', response.data);
       localStorage.setItem('token', response.data.token);
+      localStorage.setItem('userName', response.data.user.name);
       navigate('/dashboard');
+
     } catch (err: any) {
 
 
@@ -75,8 +79,9 @@ const Login: React.FC = () => {
 
           <div className="button-wrapper">
             <button type="submit" className="login-button" disabled={loading}>
-              {loading ? 'Logging in...' : 'Log In'}
+              {loading ? <Spinner size={20} /> : 'Log In'}
             </button>
+
             <div className="forgot-password">
               <Link to="/forgot-password">Forgot Password</Link>
             </div>

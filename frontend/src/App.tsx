@@ -3,6 +3,7 @@ import Login from './components/Login/Login'
 import Signup from './components/Login/Signup'
 import Dashboard from './components/Dashboard/Dashboard'
 import ProtectedRoute from './components/ProtectedRoute'
+import MainLayout from './components/MainLayout'
 
 function App() {
   return (
@@ -10,15 +11,22 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
-        <Route path="/dashboard" element={
+        
+        {/* Protected Routes with Sidebar */}
+        <Route element={
           <ProtectedRoute>
-            <Dashboard />
+            <MainLayout />
           </ProtectedRoute>
-        } />
+        }>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/returns" element={<div>Return Orders Page Placeholder</div>} />
+          {/* Add more routes here as needed */}
+        </Route>
       </Routes>
     </Router>
   )
 }
+
 
 
 

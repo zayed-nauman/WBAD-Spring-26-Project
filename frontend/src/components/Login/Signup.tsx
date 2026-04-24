@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { User, Lock, ChevronDown } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Spinner from '../Common/Spinner';
 import './Signup.css';
+
 import logo from '../../assets/logo.png';
 
 const Signup: React.FC = () => {
@@ -164,8 +166,9 @@ const Signup: React.FC = () => {
 
           <div className="signup-button-container">
             <button type="submit" className="signup-button" disabled={loading}>
-              {loading ? 'Creating Account...' : 'Sign Up'}
+              {loading ? <Spinner size={20} /> : 'Sign Up'}
             </button>
+
             <div className="login-link-container">
               <Link to="/" className="login-link">I already have an account</Link>
             </div>
