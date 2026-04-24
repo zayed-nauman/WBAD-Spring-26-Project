@@ -1,0 +1,139 @@
+.signup-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100vh;
+  background: url('../../assets/signup-bg.png') no-repeat center center;
+  background-size: cover;
+  padding: 40px 20px;
+}
+
+.signup-card {
+  width: 100%;
+  max-width: 800px;
+  background-color: white;
+  border-radius: 24px;
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1);
+  padding: 20px 60px;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.signup-card .brand-logo {
+  width: 100px;
+  height: auto;
+  margin-bottom: 12px;
+}
+
+.signup-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 12px;
+}
+
+
+.signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+
+.field-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+
+.field-container label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-group input, .input-group select {
+  width: 100%;
+  padding: 10px 16px;
+  background-color: #f1f1f1;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #1a1a1a;
+}
+
+
+.input-group .icon {
+  position: absolute;
+  right: 14px;
+  color: #1a1a1a;
+  opacity: 0.6;
+}
+
+.signup-button-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 8px;
+  gap: 4px;
+}
+
+
+
+.signup-button {
+  width: 280px;
+  padding: 14px;
+  background-color: var(--brand-orange);
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(232, 69, 10, 0.2);
+}
+
+.login-link-container {
+  font-size: 13px;
+  color: #888;
+}
+
+.login-link {
+  color: #888;
+  text-decoration: none;
+}
+
+.login-link:hover {
+  text-decoration: underline;
+}
+
+.error-message {
+  color: #ff4d4f;
+  font-size: 13px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .signup-card {
+    padding: 40px 24px;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
