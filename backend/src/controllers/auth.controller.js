@@ -13,14 +13,17 @@ const register = async (req, res) => {
     const user = await authService.registerUser({ name, email, password, role });
     res.json({ message: 'User registered', userId: user.id });
   } catch (error) {
+    console.error('Registration Error:', error);
+    
     if (error && error.code === 'INVALID_ROLE') {
       res.status(400).json({ error: 'Invalid role supplied' });
       return;
     }
 
-    res.status(400).json({ error: 'Email already exists' });
+    res.status(400).json({ error: error.message || 'Registration failed' });
   }
 };
+
 
 /**
  * Handle user login.
@@ -41,9 +44,11 @@ const login = async (req, res) => {
 
     res.json(authResult);
   } catch (error) {
-    res.status(500).json({ error: 'Login failed' });
+    console.error('Login Error:', error);
+    res.status(500).json({ error: 'Login failed: ' + error.message });
   }
 };
+
 
 module.exports = {
   register,
