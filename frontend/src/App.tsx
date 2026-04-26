@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Login from './components/Login/Login'
 import Signup from './components/Login/Signup'
 import Dashboard from './components/Dashboard/Dashboard'
+import Returns from './components/Returns/Returns'
 import ProtectedRoute from './components/ProtectedRoute'
 import MainLayout from './components/MainLayout'
 
@@ -19,13 +20,14 @@ function App() {
           </ProtectedRoute>
         }>
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/returns" element={<div>Return Orders Page Placeholder</div>} />
+          <Route path="/returns" element={<Returns />} />
           {/* Add more routes here as needed */}
         </Route>
       </Routes>
     </Router>
   )
 }
+
 
 
 

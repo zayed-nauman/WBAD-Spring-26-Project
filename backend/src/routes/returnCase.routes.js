@@ -21,11 +21,18 @@ router.post(
 	returnCaseController.autoCreateReturnCase,
 );
 router.post(
+	"/validate",
+	authGuard,
+	authorizeRoles("ADMIN", "DISPATCHER", "CUSTOMER"),
+	returnCaseController.validateReturns,
+);
+router.post(
 	"/",
 	authGuard,
 	authorizeRoles("ADMIN", "DISPATCHER", "CUSTOMER"),
 	returnCaseController.createReturnCase,
 );
+
 router.get(
 	"/:id/history",
 	authGuard,

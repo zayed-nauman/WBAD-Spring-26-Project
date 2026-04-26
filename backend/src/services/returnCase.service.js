@@ -586,6 +586,65 @@ const deleteReturnCase = async (id, actor) => {
   });
 };
 
+/**
+ * Validate multiple order identifiers for return eligibility.
+ * @param {string} orderIdentifiers - Comma-separated order IDs or tracking numbers
+ * @param {Object} actor
+ * @returns {Promise<{success: boolean, errors: string[]}>}
+ */
+const validateReturnOrders = async (orderIdentifiers, actor) => {
+  const identifiers = orderIdentifiers
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
+  if (identifiers.length === 0) {
+    throw buildError("At least one order identifier is required.", 400);
+  }
+
+  const errors = [];
+  const validatedOrders = [];
+
+  for (const identifier of identifiers) {
+    // Try to find by ID (if numeric) or trackingNumber
+    const id = Number(identifier);
+    const order = await prisma.order.findFirst({
+      where: {
+        OR: [
+          { id: Number.isInteger(id) ? id : -1 },
+          { trackingNumber: identifier },
+        ],
+      },
+    });
+
+    if (!order) {
+      errors.push(`Order "${identifier}" not found.`);
+      continue;
+    }
+
+    // Check ownership if CUSTOMER
+    const role = getActorRole(actor);
+    if (role === CUSTOMER_ROLE && order.createdBy !== Number(actor?.id)) {
+      errors.push(`Order "${identifier}" does not belong to your account.`);
+      continue;
+    }
+
+    // Check status
+    if (order.status !== "DELIVERED") {
+      errors.push(`Order "${identifier}" cannot be returned. Only delivered orders are eligible.`);
+      continue;
+    }
+
+    validatedOrders.push(order);
+  }
+
+  return {
+    success: errors.length === 0,
+    errors,
+    orders: validatedOrders,
+  };
+};
+
 module.exports = {
   listReturnCases,
   getReturnCaseById,
@@ -595,4 +654,5 @@ module.exports = {
   transitionReturnCaseStatus,
   listReturnCaseHistory,
   deleteReturnCase,
+  validateReturnOrders,
 };
