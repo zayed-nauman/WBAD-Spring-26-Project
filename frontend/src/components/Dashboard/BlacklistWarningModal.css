@@ -1,0 +1,54 @@
+.warning-modal {
+  max-width: 500px;
+  padding: 32px;
+  border-radius: 12px;
+}
+
+.warning-body {
+  text-align: center;
+}
+
+.warning-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.warning-icon {
+  color: #D32F2F;
+}
+
+.warning-title {
+  color: #D32F2F;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.warning-message {
+  color: #333;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.warning-footer {
+  display: flex;
+  justify-content: center;
+}
+
+.btn-cancel-warning {
+  background: var(--brand-orange);
+  color: white;
+  border: none;
+  padding: 12px 48px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-cancel-warning:hover {
+  background: #D63408;
+}

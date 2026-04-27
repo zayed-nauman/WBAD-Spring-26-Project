@@ -1,0 +1,224 @@
+.status-modal {
+  max-width: 1100px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 20px;
+  padding: 40px;
+}
+
+.status-order-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  background: white;
+  border: 1px solid #E0E0E0;
+  border-radius: 12px;
+  margin-bottom: 32px;
+  font-size: 14px;
+  color: #666;
+}
+
+.summary-left {
+  font-weight: 500;
+}
+
+.summary-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+}
+
+.status-badge-inline {
+  background: #00468C; /* Navy color from Figma */
+  color: white;
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.lifecycle-section h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #111;
+}
+
+.lifecycle-box {
+  background: white;
+  border: 1px solid #E0E0E0;
+  border-radius: 16px;
+  padding: 40px;
+  margin-bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.lifecycle-row {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.lifecycle-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100px;
+}
+
+.lifecycle-circle {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 2px solid #E0E0E0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  color: #999;
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.lifecycle-circle.passed {
+  background: #F0F9F1;
+  border-color: #4CAF50;
+  color: #4CAF50;
+}
+
+.lifecycle-circle.current {
+  background: white;
+  border-color: var(--brand-orange);
+  color: var(--brand-orange);
+  box-shadow: 0 0 0 6px rgba(232, 69, 10, 0.1);
+}
+
+.lifecycle-circle.selectable {
+  border-color: var(--brand-orange);
+  cursor: pointer;
+}
+
+.lifecycle-circle.selectable:hover {
+  background: #FFF3E0;
+  transform: scale(1.05);
+}
+
+.lifecycle-circle.selected {
+  background: var(--brand-orange);
+  border-color: var(--brand-orange);
+  color: white;
+}
+
+.lifecycle-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  color: #333;
+  line-height: 1.4;
+}
+
+.status-footer-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.fragile-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.toggle-btn {
+  width: 50px;
+  height: 26px;
+  background: #E0E0E0;
+  border-radius: 13px;
+  position: relative;
+  transition: background 0.3s;
+}
+
+.toggle-btn.active {
+  background: #4CAF50;
+}
+
+.toggle-slider {
+  width: 22px;
+  height: 22px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.3s;
+}
+
+.toggle-btn.active .toggle-slider {
+  transform: translateX(24px);
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 16px;
+}
+
+.btn-cancel, .btn-modify, .btn-save {
+  padding: 12px 28px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.btn-cancel {
+  background: white;
+  border-color: #E0E0E0;
+  color: #666;
+}
+
+.btn-modify {
+  background: white;
+  border-color: #333;
+  color: #333;
+}
+
+.btn-save {
+  background: var(--brand-orange);
+  color: white;
+  border: none;
+}
+
+.btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-save:hover:not(:disabled) {
+  background: #D63408;
+  box-shadow: 0 4px 12px rgba(232, 69, 10, 0.2);
+}
+
+@media (max-width: 900px) {
+  .lifecycle-box {
+    padding: 20px;
+  }
+  
+  .lifecycle-circle {
+    width: 60px;
+    height: 60px;
+  }
+}
