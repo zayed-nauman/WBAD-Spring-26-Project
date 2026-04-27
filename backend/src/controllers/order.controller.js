@@ -60,6 +60,7 @@ const createOrder = async (req, res) => {
     city,
     weightKg,
     codAmount,
+    paymentType,
     isFragile,
   } = req.body;
 
@@ -78,6 +79,7 @@ const createOrder = async (req, res) => {
         weightKg,
         numberOfPieces: req.body.numberOfPieces,
         codAmount,
+        paymentType,
         amount: req.body.amount,
         isFragile,
         fragile: req.body.fragile,
