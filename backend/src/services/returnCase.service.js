@@ -121,7 +121,11 @@ const buildWorkflowUpdateData = (currentCase, payload) => {
     updateData.returnStatus = "RESTOCKED";
   }
 
-  if (nextStatus === "REFUND_REQUESTED" && currentCase.order?.paymentType === "COD" && !currentCase.adminApprovedForCod) {
+  const isCodOrder =
+    currentCase.order?.paymentType === "COD" ||
+    (currentCase.order?.paymentType == null && currentCase.order?.codAmount != null);
+
+  if (nextStatus === "REFUND_REQUESTED" && isCodOrder && !currentCase.adminApprovedForCod) {
     throw buildError("COD refund should be blocked before admin approval.", 400);
   }
 
