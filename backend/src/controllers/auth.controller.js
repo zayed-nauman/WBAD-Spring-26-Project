@@ -7,18 +7,13 @@ const authService = require('../services/auth.service');
  * @returns {Promise<void>}
  */
 const register = async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password } = req.body;
 
   try {
-    const user = await authService.registerUser({ name, email, password, role });
+    const user = await authService.registerUser({ name, email, password });
     res.json({ message: 'User registered', userId: user.id });
   } catch (error) {
     console.error('Registration Error:', error);
-    
-    if (error && error.code === 'INVALID_ROLE') {
-      res.status(400).json({ error: 'Invalid role supplied' });
-      return;
-    }
 
     res.status(400).json({ error: error.message || 'Registration failed' });
   }
@@ -49,8 +44,38 @@ const login = async (req, res) => {
   }
 };
 
+/**
+ * Handle password reset.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
+const resetPassword = async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const reset = await authService.resetPassword({ email, password });
+
+    if (!reset) {
+      res.status(404).json({ error: 'No account found for that email' });
+      return;
+    }
+
+    res.json({ success: true, message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Reset Password Error:', error);
+
+    if (error && ['INVALID_RESET_PAYLOAD', 'WEAK_PASSWORD'].includes(error.code)) {
+      res.status(400).json({ error: error.message });
+      return;
+    }
+
+    res.status(500).json({ error: 'Failed to reset password' });
+  }
+};
 
 module.exports = {
   register,
   login,
+  resetPassword,
 };

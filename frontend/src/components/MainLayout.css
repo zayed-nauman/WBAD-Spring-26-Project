@@ -2,11 +2,27 @@
   display: flex;
   min-height: 100vh;
   width: 100%;
+  background-color: var(--page-bg);
 }
 
 .content-area {
   flex: 1;
-  margin-left: 260px; /* Same as sidebar width */
-  padding: 40px;
-  background-color: var(--page-bg);
+  margin-left: var(--sidebar-width);
+  padding: 0 32px 32px 32px;
+  width: calc(100% - var(--sidebar-width));
+  overflow-x: hidden;
+}
+
+@media (max-width: 1024px) {
+  .content-area {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .content-area {
+    margin-left: 0;
+    width: 100%;
+    padding: 16px;
+  }
 }

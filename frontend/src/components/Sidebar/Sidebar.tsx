@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, ClipboardList, Truck, PhoneOff, RotateCcw } from 'lucide-react';
+import { ClipboardList, Package, PhoneOff, RotateCcw, Truck, Users } from 'lucide-react';
 
 import './Sidebar.css';
 import logoWhite from '../../assets/logo-white.png';
@@ -20,7 +20,8 @@ const Sidebar: React.FC = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userName');
-    navigate('/');
+    localStorage.removeItem('user');
+    navigate('/', { replace: true });
   };
 
   return (
@@ -30,17 +31,13 @@ const Sidebar: React.FC = () => {
       </div>
 
       <nav className="sidebar-nav">
-        <NavLink to="/dashboard" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-          <LayoutDashboard size={20} />
-          <span>Dashboard</span>
-        </NavLink>
         <NavLink to="/orders" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <ClipboardList size={20} />
           <span>Orders</span>
         </NavLink>
         <NavLink to="/riders" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <Truck size={20} />
-          <span>Riders</span>
+          <span>Rider Assignment</span>
         </NavLink>
         <NavLink to="/blacklist" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <PhoneOff size={20} />
@@ -49,6 +46,14 @@ const Sidebar: React.FC = () => {
         <NavLink to="/returns" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
           <RotateCcw size={20} />
           <span>Process Returns</span>
+        </NavLink>
+        <NavLink to="/rider-pool" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+          <Users size={20} />
+          <span>Rider Pool</span>
+        </NavLink>
+        <NavLink to="/order-assignments" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+          <Package size={20} />
+          <span>Order Assignments</span>
         </NavLink>
       </nav>
 

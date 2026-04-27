@@ -2,19 +2,24 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import './Returns.css';
 import Spinner from '../Common/Spinner';
+import ReturnSummary from './ReturnSummary';
+import ReturnConfirmation from './ReturnConfirmation';
+
+type Step = 'input' | 'summary' | 'confirmation';
 
 const Returns: React.FC = () => {
+  const [step, setStep] = useState<Step>('input');
   const [orderNumbers, setOrderNumbers] = useState('');
+  const [validatedOrders, setValidatedOrders] = useState<any[]>([]);
+  const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   const handleContinue = async () => {
     if (!orderNumbers.trim()) return;
     
     setLoading(true);
     setError(null);
-    setSuccess(null);
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -29,14 +34,13 @@ const Returns: React.FC = () => {
       const { data } = response.data;
 
       if (data.success) {
-        setSuccess('All orders validated! Proceeding to the next step...');
-        console.log('Validated orders:', data.orders);
-        // Next steps would go here
+        setValidatedOrders(data.orders);
+        setStep('summary');
       } else {
         setError(data.errors.join(' '));
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'An error occurred during validation.');
+      setError(err.response?.data?.error || err.response?.data?.message || 'An error occurred during validation.');
     } finally {
       setLoading(false);
     }
@@ -44,20 +48,75 @@ const Returns: React.FC = () => {
 
   const handleCancel = () => {
     setOrderNumbers('');
+    setValidatedOrders([]);
+    setReason('');
     setError(null);
-    setSuccess(null);
+    setStep('input');
   };
 
+  const handleSummaryContinue = async (returnReason: string) => {
+    setLoading(true);
+    setError(null);
+    setReason(returnReason);
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const token = localStorage.getItem('token');
+      
+      for (const order of validatedOrders) {
+        await axios.post(
+          `${apiUrl}/api/return-cases`,
+          {
+            orderId: order.id,
+            customerId: order.createdBy,
+            reason: returnReason,
+            notes: 'Complete order returned',
+            refundAmount: 0 // As requested: refund 0 amount
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+
+      setStep('confirmation');
+    } catch (err: any) {
+      setError(err.response?.data?.error || err.response?.data?.message || 'Failed to process returns.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (step === 'summary') {
+    return (
+      <ReturnSummary 
+        orders={validatedOrders}
+        onBack={() => setStep('input')}
+        onContinue={handleSummaryContinue}
+        onCancel={handleCancel}
+        loading={loading}
+      />
+    );
+  }
+
+  if (step === 'confirmation') {
+    return (
+      <ReturnConfirmation 
+        orders={validatedOrders}
+        reason={reason}
+        onContinue={handleCancel}
+      />
+    );
+  }
+
   return (
-    <div className="returns-container">
-      <header className="returns-header">
-        <h1>Return Orders</h1>
-        <p>Enter order numbers or order IDs to process a return in the system</p>
-      </header>
+    <div className="page-container returns-page">
+      <div className="page-header">
+        <div>
+          <h1>Return Orders</h1>
+          <p>Enter order numbers or order IDs to process a return in the system</p>
+        </div>
+      </div>
 
       <div className="returns-card">
         {error && <div className="error-message-box">{error}</div>}
-        {success && <div className="success-message-box">{success}</div>}
         
         <div className="card-section">
           <label>Enter number(s) to process returns</label>
@@ -91,4 +150,3 @@ const Returns: React.FC = () => {
 };
 
 export default Returns;
-

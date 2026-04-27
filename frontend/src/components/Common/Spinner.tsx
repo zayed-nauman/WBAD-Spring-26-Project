@@ -6,7 +6,7 @@ interface SpinnerProps {
   color?: string;
 }
 
-const Spinner: React.FC<SpinnerProps> = ({ size = 20, color = 'white' }) => {
+const Spinner: React.FC<SpinnerProps> = ({ size = 20, color = 'var(--brand-orange)' }) => {
   return (
     <div 
       className="spinner" 
