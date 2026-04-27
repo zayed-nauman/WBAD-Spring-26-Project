@@ -122,6 +122,7 @@ const normalizeOrderPayload = (payload = {}) => {
     numberOfPieces: Number(payload.numberOfPieces) > 0 ? Number(payload.numberOfPieces) : 1,
     weightKg: Number(payload.weightKg) > 0 ? Number(payload.weightKg) : 1,
     codAmount: amount === undefined || amount === null || amount === '' ? null : Number(amount),
+    paymentType: payload.paymentType || null,
     isFragile: Boolean(payload.fragile ?? payload.isFragile),
     createdAt: payload.date ? new Date(payload.date) : undefined,
   };

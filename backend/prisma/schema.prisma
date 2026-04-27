@@ -88,6 +88,7 @@ model Order {
   numberOfPieces    Int               @default(1)
   weightKg           Float             @default(1)
   codAmount          Float?
+  paymentType        String?
   isFragile          Boolean           @default(false)
   isBlacklisted      Boolean           @default(false)
   blacklistedReason  String?
