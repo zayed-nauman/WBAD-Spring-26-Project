@@ -3,12 +3,85 @@ const recommendationService = require('../services/recommendation.service');
 
 const parseId = (rawId) => Number.parseInt(rawId, 10);
 
+const handleError = (res, error, fallback) => {
+  if (error && error.statusCode) {
+    res.status(error.statusCode).json({ error: error.message });
+    return;
+  }
+
+  if (error && error.code === 'P2002') {
+    res.status(409).json({ error: 'A rider with this phone number or rider number already exists.' });
+    return;
+  }
+
+  if (error && error.code === 'P2025') {
+    res.status(404).json({ error: 'Rider not found.' });
+    return;
+  }
+
+  console.error(fallback, error);
+  res.status(500).json({ error: fallback });
+};
+
 const listRiders = async (req, res) => {
   try {
-    const riders = await riderService.listRiders();
+    const riders = await riderService.listRiders(req.query);
     res.json(riders);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch riders' });
+    handleError(res, error, 'Failed to fetch riders');
+  }
+};
+
+const getRiderById = async (req, res) => {
+  try {
+    const rider = await riderService.getRiderById(parseId(req.params.id));
+    if (!rider) {
+      res.status(404).json({ error: 'Rider not found' });
+      return;
+    }
+    res.json(rider);
+  } catch (error) {
+    handleError(res, error, 'Failed to fetch rider');
+  }
+};
+
+const getNextRiderNumber = async (req, res) => {
+  try {
+    res.json({ riderNumber: await riderService.nextRiderNumber() });
+  } catch (error) {
+    handleError(res, error, 'Failed to generate rider number');
+  }
+};
+
+const listReadyOrders = async (req, res) => {
+  try {
+    const orders = await riderService.listReadyOrders(req.query);
+    res.json(orders);
+  } catch (error) {
+    handleError(res, error, 'Failed to fetch ready orders');
+  }
+};
+
+const listAssignedOrders = async (req, res) => {
+  try {
+    const orders = await riderService.listAssignedOrders(req.query);
+    res.json(orders);
+  } catch (error) {
+    handleError(res, error, 'Failed to fetch assigned orders');
+  }
+};
+
+const getAssignedOrder = async (req, res) => {
+  try {
+    const order = await riderService.getAssignedOrder(parseId(req.params.orderId));
+    if (!order) {
+      res.status(404).json({ error: 'Assigned order not found' });
+      return;
+    }
+
+    res.json(order);
+  } catch (error) {
+    handleError(res, error, 'Failed to fetch assigned order');
   }
 };
 
@@ -23,7 +96,7 @@ const recommendRiders = async (req, res) => {
 
     res.json(recommendations);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to get recommendations' });
+    handleError(res, error, 'Failed to get recommendations');
   }
 };
 
@@ -47,7 +120,7 @@ const createRider = async (req, res) => {
     const rider = await riderService.createRider(req.body);
     res.json({ message: 'Rider created', rider });
   } catch (error) {
-    res.status(400).json({ error: 'Failed to create rider' });
+    handleError(res, error, 'Failed to create rider');
   }
 };
 
@@ -55,15 +128,10 @@ const assignRider = async (req, res) => {
   const { orderId, riderId } = req.body;
 
   try {
-    const assignment = await riderService.assignRider(orderId, riderId);
-    res.json({ message: 'Rider assigned', assignment });
+    const result = await riderService.assignRider(orderId, riderId);
+    res.json({ message: 'Rider assigned', ...result });
   } catch (error) {
-    if (error && (error.code === 'RIDER_CAPACITY_EXCEEDED' || error.code === 'RIDER_OUTSIDE_ZONE')) {
-      res.status(400).json({ error: error.message });
-      return;
-    }
-
-    res.status(500).json({ error: 'Failed to assign rider' });
+    handleError(res, error, 'Failed to assign rider');
   }
 };
 
@@ -72,7 +140,7 @@ const updateRider = async (req, res) => {
     const rider = await riderService.updateRider(parseId(req.params.id), req.body);
     res.json({ message: 'Rider updated', rider });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to update rider' });
+    handleError(res, error, 'Failed to update rider');
   }
 };
 
@@ -81,12 +149,17 @@ const deleteRider = async (req, res) => {
     await riderService.deleteRider(parseId(req.params.id));
     res.json({ message: 'Rider deleted' });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to delete rider' });
+    handleError(res, error, 'Failed to delete rider');
   }
 };
 
 module.exports = {
   listRiders,
+  getRiderById,
+  getNextRiderNumber,
+  listReadyOrders,
+  listAssignedOrders,
+  getAssignedOrder,
   recommendRiders,
   recommendByAddress,
   createRider,

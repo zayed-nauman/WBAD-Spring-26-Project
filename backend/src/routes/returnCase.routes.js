@@ -11,49 +11,56 @@ const router = express.Router();
 router.get(
 	"/",
 	authGuard,
-	authorizeRoles("ADMIN", "DISPATCHER", "CUSTOMER"),
+	authorizeRoles(),
 	returnCaseController.listReturnCases,
 );
 router.post(
 	"/auto-create",
 	authGuard,
-	authorizeRoles("ADMIN", "DISPATCHER"),
+	authorizeRoles(),
 	returnCaseController.autoCreateReturnCase,
+);
+router.post(
+	"/validate",
+	authGuard,
+	authorizeRoles(),
+	returnCaseController.validateReturns,
 );
 router.post(
 	"/",
 	authGuard,
-	authorizeRoles("ADMIN", "DISPATCHER", "CUSTOMER"),
+	authorizeRoles(),
 	returnCaseController.createReturnCase,
 );
+
 router.get(
 	"/:id/history",
 	authGuard,
-	authorizeRoles("ADMIN", "DISPATCHER", "CUSTOMER"),
+	authorizeRoles(),
 	returnCaseController.listReturnCaseHistory,
 );
 router.get(
 	"/:id",
 	authGuard,
-	authorizeRoles("ADMIN", "DISPATCHER", "CUSTOMER"),
+	authorizeRoles(),
 	returnCaseController.getReturnCaseById,
 );
 router.put(
 	"/:id",
 	authGuard,
-	authorizeRoles("ADMIN", "DISPATCHER"),
+	authorizeRoles(),
 	returnCaseController.updateReturnCase,
 );
 router.patch(
 	"/:id/transition",
 	authGuard,
-	authorizeRoles("ADMIN", "DISPATCHER"),
+	authorizeRoles(),
 	returnCaseController.transitionReturnCaseStatus,
 );
 router.delete(
 	"/:id",
 	authGuard,
-	authorizeRoles("ADMIN", "DISPATCHER"),
+	authorizeRoles(),
 	returnCaseController.deleteReturnCase,
 );
 

@@ -1,0 +1,9 @@
+UPDATE "User" SET "role" = 'DISPATCHER';
+
+ALTER TABLE "User" ALTER COLUMN "role" SET DEFAULT 'DISPATCHER';
+
+ALTER TABLE "Order" DROP COLUMN IF EXISTS "paymentType";
+ALTER TABLE "ReturnCase" DROP COLUMN IF EXISTS "paymentType";
+ALTER TABLE "ReturnCase" DROP COLUMN IF EXISTS "adminApprovedForCod";
+
+DROP TYPE IF EXISTS "PaymentType";

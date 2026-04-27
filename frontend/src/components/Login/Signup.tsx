@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, Lock, ChevronDown } from 'lucide-react';
+import { User, Lock } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Spinner from '../Common/Spinner';
@@ -44,7 +44,6 @@ const Signup: React.FC = () => {
         name: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
         password: formData.password,
-        role: 'CUSTOMER', // Default role
       });
 
 

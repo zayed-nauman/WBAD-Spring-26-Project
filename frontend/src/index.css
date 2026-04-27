@@ -1,16 +1,36 @@
 :root {
+  /* Colors */
   --brand-orange: #E8450A;
   --brand-navy: #1A2E5A;
-  --page-bg: #F5F5F5;
+  --page-bg: #F8F9FB;
   --card-bg: #FFFFFF;
-  --input-bg: #F5F5F5;
-  --input-border: #E0E0E0;
-  --text-primary: #1A1A1A;
-  --text-secondary: #888888;
-  --icon-color: #AAAAAA;
-  --shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+  --input-bg: #FFFFFF;
+  --input-border: #E0E6ED;
+  --text-primary: #1E293B;
+  --text-secondary: #64748B;
+  --text-muted: #94A3B8;
+  --icon-color: #64748B;
+  
+  /* Status Colors */
+  --status-green: #10B981;
+  --status-green-bg: #ECFDF5;
+  --status-blue: #3B82F6;
+  --status-blue-bg: #EFF6FF;
+  --status-red: #EF4444;
+  --status-red-bg: #FEF2F2;
+  --status-orange: #F59E0B;
+  --status-orange-bg: #FFFBEB;
+
+  /* Effects */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  
+  /* Layout */
   --border-radius: 12px;
-  --input-radius: 6px;
+  --input-radius: 8px;
+  --sidebar-width: 260px;
+  --content-max-width: 1400px;
 }
 
 * {
@@ -53,4 +73,36 @@ a {
 input {
   font-family: inherit;
   outline: none;
+}
+
+/* Global Page Structure */
+.page-container {
+  padding: 40px;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.page-header h1 {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--brand-navy);
+  margin: 0 0 8px 0;
+  line-height: 1.2;
+}
+
+.page-header p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+  max-width: 600px;
 }
