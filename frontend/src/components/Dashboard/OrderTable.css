@@ -1,0 +1,137 @@
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow);
+  background: var(--card-bg);
+  margin-top: 24px;
+}
+
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  border: none;
+}
+
+.orders-table thead {
+  background-color: #1A4B7E;
+  color: white;
+}
+
+.orders-table th {
+  padding: 16px 12px;
+  text-align: left;
+  font-weight: 600;
+  border: none;
+  white-space: nowrap;
+}
+
+.orders-table tbody tr {
+  border-bottom: 1px solid #E0E0E0;
+  transition: background-color 0.2s ease;
+}
+
+.orders-table tbody tr:hover {
+  background-color: #F9F9F9;
+}
+
+.orders-table tbody tr.blacklisted-row {
+  background-color: #FFF5F5;
+}
+
+.orders-table td {
+  padding: 14px 12px;
+  vertical-align: middle;
+}
+
+.order-id {
+  font-weight: 600;
+  color: var(--brand-navy);
+  font-family: 'Courier New', monospace;
+}
+
+.amount {
+  font-weight: 600;
+  color: #2D5A3D;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.action-btn {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: none;
+  background-color: #F0F0F0;
+  color: #666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.action-btn:hover {
+  background-color: #E0E0E0;
+  transform: translateY(-2px);
+}
+
+.edit-btn:hover {
+  background-color: #E3F2FD;
+  color: #1976D2;
+}
+
+.print-btn:hover {
+  background-color: #FFF3E0;
+  color: #F57C00;
+}
+
+.delete-btn:hover {
+  background-color: #FFEBEE;
+  color: #D32F2F;
+}
+
+.loading-message,
+.no-orders-message {
+  padding: 40px 20px;
+  text-align: center;
+  color: #888;
+  font-size: 16px;
+  background: white;
+  border-radius: 8px;
+  margin-top: 24px;
+}
+
+@media (max-width: 768px) {
+  .orders-table {
+    font-size: 12px;
+  }
+
+  .orders-table th,
+  .orders-table td {
+    padding: 10px 8px;
+  }
+
+  .actions {
+    gap: 4px;
+  }
+
+  .action-btn {
+    padding: 4px 6px;
+  }
+}
+
+.status-clickable {
+  cursor: pointer;
+  display: inline-block;
+  transition: transform 0.2s;
+}
+
+.status-clickable:hover {
+  transform: scale(1.05);
+}

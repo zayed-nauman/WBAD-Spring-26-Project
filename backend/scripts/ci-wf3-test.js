@@ -437,7 +437,67 @@ const run = async () => {
     });
     assert(deletedFetch.status === 404, 'Deleted return case should not be retrievable');
 
-    console.log('WF3 independent test passed');
+    // --- Partial Returns Test ---
+    const multiItemOrder = await prisma.order.create({
+      data: {
+        senderName: 'Sender WF3 Multi',
+        receiverName: 'Receiver WF3 Multi',
+        receiverPhone: '03009999999',
+        customerName: 'WF3 Customer Multi',
+        phoneNumber: '03009999999',
+        address: 'Test Address Multi',
+        city: 'Karachi',
+        items: 'Jeans, Shirt, Cap',
+        weightKg: 1,
+        paymentType: 'COD',
+        status: 'DELIVERED',
+        createdBy: customer.id,
+      },
+    });
+    createdOrderIds.push(multiItemOrder.id);
+
+    // 1. Return first item (Jeans)
+    const returnJeans = await request('/api/return-cases', {
+      method: 'POST',
+      headers: customerHeaders,
+      body: JSON.stringify({
+        orderId: multiItemOrder.id,
+        customerId: customer.id,
+        reason: 'Partial return - Jeans',
+        paymentType: 'COD',
+        returnedItems: 'Jeans'
+      }),
+    });
+    assert(returnJeans.status === 201, 'Failed to return Jeans');
+    assert(returnJeans.data.data.returnedItems.toLowerCase() === 'jeans', 'returnedItems should be jeans');
+
+    // 2. Return second item (Shirt)
+    const returnShirt = await request('/api/return-cases', {
+      method: 'POST',
+      headers: customerHeaders,
+      body: JSON.stringify({
+        orderId: multiItemOrder.id,
+        customerId: customer.id,
+        reason: 'Partial return - Shirt',
+        paymentType: 'COD',
+        returnedItems: 'Shirt'
+      }),
+    });
+    assert(returnShirt.status === 201, 'Failed to return Shirt');
+    // It should append
+    const finalItems = returnShirt.data.data.returnedItems.toLowerCase();
+    assert(finalItems.includes('jeans') && finalItems.includes('shirt'), 'returnedItems should contain both jeans and shirt');
+
+    // 3. Validate remaining items (should only be Cap)
+    const validatePartial = await request('/api/return-cases/validate', {
+      method: 'POST',
+      headers: dispatcherHeaders,
+      body: JSON.stringify({ orderNumbers: multiItemOrder.trackingNumber }),
+    });
+    assert(validatePartial.status === 200, 'Validation failed');
+    assert(validatePartial.data.data.orders[0].items === 'Cap', `Expected items to be "Cap", got "${validatePartial.data.data.orders[0].items}"`);
+
+    console.log('WF3 independent test passed (including Partial Returns)');
   } finally {
     try {
       if (createdOrderIds.length) {

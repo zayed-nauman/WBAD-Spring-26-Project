@@ -5,9 +5,9 @@ const inventoryController = require('../controllers/inventory.controller');
 
 const router = express.Router();
 
-router.get('/', authGuard, authorizeRoles('ADMIN', 'DISPATCHER'), inventoryController.listInventory);
-router.post('/', authGuard, authorizeRoles('ADMIN', 'DISPATCHER'), inventoryController.createInventory);
-router.put('/:id', authGuard, authorizeRoles('ADMIN', 'DISPATCHER'), inventoryController.updateInventory);
-router.delete('/:id', authGuard, authorizeRoles('ADMIN', 'DISPATCHER'), inventoryController.deleteInventory);
+router.get('/', authGuard, authorizeRoles(), inventoryController.listInventory);
+router.post('/', authGuard, authorizeRoles(), inventoryController.createInventory);
+router.put('/:id', authGuard, authorizeRoles(), inventoryController.updateInventory);
+router.delete('/:id', authGuard, authorizeRoles(), inventoryController.deleteInventory);
 
 module.exports = router;

@@ -4,13 +4,20 @@ const { authorizeRoles } = require('../services/role.guard');
 const riderController = require('../controllers/rider.controller');
 
 const router = express.Router();
+const dispatcherAccess = authorizeRoles();
 
-router.get('/', authGuard, authorizeRoles('ADMIN', 'DISPATCHER', 'RIDER'), riderController.listRiders);
-router.get('/recommend/:orderId', authGuard, authorizeRoles('ADMIN', 'DISPATCHER'), riderController.recommendRiders);
-router.post('/recommend', authGuard, authorizeRoles('ADMIN', 'DISPATCHER'), riderController.recommendByAddress);
-router.post('/', authGuard, authorizeRoles('ADMIN', 'DISPATCHER'), riderController.createRider);
-router.post('/assign', authGuard, authorizeRoles('ADMIN', 'DISPATCHER'), riderController.assignRider);
-router.put('/:id', authGuard, authorizeRoles('ADMIN', 'DISPATCHER'), riderController.updateRider);
-router.delete('/:id', authGuard, authorizeRoles('ADMIN', 'DISPATCHER'), riderController.deleteRider);
+router.get('/', authGuard, dispatcherAccess, riderController.listRiders);
+router.get('/next-number', authGuard, dispatcherAccess, riderController.getNextRiderNumber);
+router.get('/ready-orders', authGuard, dispatcherAccess, riderController.listReadyOrders);
+router.get('/assigned-orders', authGuard, dispatcherAccess, riderController.listAssignedOrders);
+router.get('/assigned-orders/:orderId', authGuard, dispatcherAccess, riderController.getAssignedOrder);
+router.get('/recommendations/:orderId', authGuard, dispatcherAccess, riderController.recommendRiders);
+router.get('/recommend/:orderId', authGuard, dispatcherAccess, riderController.recommendRiders);
+router.post('/recommend', authGuard, dispatcherAccess, riderController.recommendByAddress);
+router.post('/', authGuard, dispatcherAccess, riderController.createRider);
+router.post('/assign', authGuard, dispatcherAccess, riderController.assignRider);
+router.get('/:id', authGuard, dispatcherAccess, riderController.getRiderById);
+router.put('/:id', authGuard, dispatcherAccess, riderController.updateRider);
+router.delete('/:id', authGuard, dispatcherAccess, riderController.deleteRider);
 
 module.exports = router;

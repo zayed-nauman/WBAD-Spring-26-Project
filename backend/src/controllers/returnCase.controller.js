@@ -93,20 +93,12 @@ const getReturnCaseById = async (req, res) => {
  * @returns {Promise<void>}
  */
 const createReturnCase = async (req, res) => {
-  const { orderId, customerId, reason, paymentType, refundAmount, notes } = req.body;
+  const { orderId, customerId, reason, refundAmount, notes, returnedItems } = req.body;
 
-  if (!orderId || !customerId || !reason || !paymentType) {
+  if (!orderId || !customerId || !reason) {
     res.status(400).json({
       success: false,
-      message: "orderId, customerId, reason, and paymentType are required.",
-    });
-    return;
-  }
-
-  if (!["PREPAID", "COD"].includes(paymentType)) {
-    res.status(400).json({
-      success: false,
-      message: "paymentType must be either PREPAID or COD.",
+      message: "orderId, customerId, and reason are required.",
     });
     return;
   }
@@ -116,9 +108,9 @@ const createReturnCase = async (req, res) => {
       orderId,
       customerId,
       reason,
-      paymentType,
       refundAmount,
       notes,
+      returnedItems,
     }, req.user);
 
     res.status(201).json({
@@ -139,12 +131,12 @@ const createReturnCase = async (req, res) => {
  * @returns {Promise<void>}
  */
 const autoCreateReturnCase = async (req, res) => {
-  const { orderId, customerId, reason, paymentType, orderStatus, refundAmount, notes } = req.body;
+  const { orderId, customerId, reason, orderStatus, refundAmount, notes } = req.body;
 
-  if (!orderId || !customerId || !reason || !paymentType || !orderStatus) {
+  if (!orderId || !customerId || !reason || !orderStatus) {
     res.status(400).json({
       success: false,
-      message: "orderId, customerId, reason, paymentType, and orderStatus are required.",
+      message: "orderId, customerId, reason, and orderStatus are required.",
     });
     return;
   }
@@ -154,7 +146,6 @@ const autoCreateReturnCase = async (req, res) => {
       orderId,
       customerId,
       reason,
-      paymentType,
       orderStatus,
       refundAmount,
       notes,

@@ -8,15 +8,7 @@ datasource db {
 }
 
 enum Role {
-  ADMIN
   DISPATCHER
-  RIDER
-  CUSTOMER
-}
-
-enum PaymentType {
-  PREPAID
-  COD
 }
 
 enum OrderStatus {
@@ -68,7 +60,7 @@ model User {
   name      String
   email     String   @unique
   password  String
-  role      Role     @default(CUSTOMER)
+  role      Role     @default(DISPATCHER)
   riderId   Int?
   createdAt DateTime @default(now())
 
@@ -93,9 +85,8 @@ model Order {
   phoneNumber        String
   address            String
   city               String
-  items              String
+  numberOfPieces    Int               @default(1)
   weightKg           Float             @default(1)
-  paymentType        PaymentType
   codAmount          Float?
   isFragile          Boolean           @default(false)
   isBlacklisted      Boolean           @default(false)
@@ -104,6 +95,9 @@ model Order {
   fulfillmentResult  FulfillmentResult @default(UNFULFILLED)
   labelGenerated     Boolean           @default(false)
   labelGeneratedAt   DateTime?
+  assignedRiderId    Int?
+  assignedAt          DateTime?
+  zone                String?
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
   createdBy          Int?
@@ -115,17 +109,25 @@ model Order {
 
 model Rider {
   id            Int      @id @default(autoincrement())
+  riderNumber   String?  @unique
   name          String
   phone         String   @unique
+  phoneNumber   String?
+  city          String?
+  location      String?
+  vehicle       String?
+  depotName     String?
   zone          String
   isAvailable   Boolean  @default(true)
   currentLoad   Int      @default(0)
   maxLoad       Int      @default(28)
   currentWeight Float    @default(0)
   maxWeight     Float    @default(40)
+  joiningDate   DateTime?
   latitude      Float?
   longitude     Float?
   createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   assignments   RiderAssignment[]
 }
@@ -156,13 +158,12 @@ model ReturnCase {
   orderId             Int                @unique
   customerId          Int?
   reason              String
-  paymentType         PaymentType
   orderTerminalStatus String?
+  returnedItems       String?
   returnStatus        ReturnStatus       @default(RETURN_INITIATED)
   inspectionDecision  InspectionDecision @default(PENDING)
   refundStatus        RefundStatus       @default(NOT_APPLICABLE)
   refundAmount        Decimal?           @db.Decimal(10, 2)
-  adminApprovedForCod Boolean            @default(false)
   restocked           Boolean            @default(false)
   inventoryAdjustedAt DateTime?
   lossRecordedAt      DateTime?
