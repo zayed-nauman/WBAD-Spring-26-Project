@@ -10,6 +10,8 @@
     "test:ci:modules": "node scripts/ci-validate-modules.js",
     "test:ci": "node scripts/ci-smoke-test.js",
     "test:ci:wf1": "node scripts/ci-wf1-test.js",
+    "test:ci:wf2": "node scripts/ci-wf2-test.js",
+    "test:ci:wf3": "node scripts/ci-wf3-test.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"

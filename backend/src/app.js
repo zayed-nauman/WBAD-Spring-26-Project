@@ -17,6 +17,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/riders', riderRoutes);
 app.use('/api/return-cases', returnCaseRoutes);
 app.use('/api/blacklist', blacklistRoutes);
+app.use('/api/blacklisted-numbers', blacklistRoutes);
 app.use('/api/inventory', inventoryRoutes);
 
 app.get('/health', (req, res) => {

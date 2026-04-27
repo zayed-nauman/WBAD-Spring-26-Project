@@ -5,8 +5,9 @@ const blacklistController = require('../controllers/blacklist.controller');
 
 const router = express.Router();
 
-router.get('/', authGuard, authorizeRoles('ADMIN', 'DISPATCHER'), blacklistController.listBlacklistedNumbers);
-router.post('/', authGuard, authorizeRoles('ADMIN', 'DISPATCHER'), blacklistController.createBlacklistedNumber);
-router.delete('/:id', authGuard, authorizeRoles('ADMIN', 'DISPATCHER'), blacklistController.deleteBlacklistedNumber);
+router.get('/', authGuard, authorizeRoles(), blacklistController.listBlacklistedNumbers);
+router.post('/', authGuard, authorizeRoles(), blacklistController.createBlacklistedNumber);
+router.post('/bulk', authGuard, authorizeRoles(), blacklistController.createBlacklistedNumbersBulk);
+router.delete('/:id', authGuard, authorizeRoles(), blacklistController.deleteBlacklistedNumber);
 
 module.exports = router;
