@@ -7,6 +7,11 @@ import './Login.css';
 
 import logo from '../../assets/logo.png';
 
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (axios.isAxiosError<{ error?: string }>(error)) return error.response?.data?.error || fallback;
+  return fallback;
+};
+
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -29,13 +34,14 @@ const Login: React.FC = () => {
       console.log('Login successful:', response.data);
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('userName', response.data.user.name);
-      navigate('/dashboard');
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      navigate('/orders');
 
-    } catch (err: any) {
+    } catch (err: unknown) {
 
 
 
-      setError(err.response?.data?.error || 'Login failed.');
+      setError(getErrorMessage(err, 'Login failed.'));
     } finally {
       setLoading(false);
     }
@@ -98,4 +104,3 @@ const Login: React.FC = () => {
 };
 
 export default Login;
-

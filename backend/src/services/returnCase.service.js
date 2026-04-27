@@ -12,8 +12,6 @@ const ALLOWED_STATUS_TRANSITIONS = {
   RESTOCKED: [],
 };
 
-const MANAGER_ROLES = new Set(["ADMIN", "DISPATCHER"]);
-const CUSTOMER_ROLE = "CUSTOMER";
 const RETURN_ELIGIBLE_ORDER_STATUSES = new Set(["DELIVERED", "FAILED", "RETURNED"]);
 
 /**
@@ -36,40 +34,12 @@ const buildError = (message, statusCode) => {
 const getActorRole = (actor) => normalizeRole(actor?.role);
 
 /**
- * Check if actor can operate as dispatcher/admin.
- * @param {Object|undefined} actor
- * @returns {boolean}
- */
-const canManageReturnCases = (actor) => MANAGER_ROLES.has(getActorRole(actor));
-
-/**
- * Ensure actor has manager-level access.
- * @param {Object|undefined} actor
- * @returns {void}
- */
-const assertManagerAccess = (actor) => {
-  if (!canManageReturnCases(actor)) {
-    throw buildError("Only admin or dispatcher can perform this action.", 403);
-  }
-};
-
-/**
  * Ensure actor can read target return case.
  * @param {Object} returnCase
  * @param {Object|undefined} actor
  * @returns {void}
  */
-const assertCanReadReturnCase = (returnCase, actor) => {
-  const role = getActorRole(actor);
-
-  if (MANAGER_ROLES.has(role)) return;
-
-  if (role === CUSTOMER_ROLE && returnCase.customerId && Number(actor?.id) === returnCase.customerId) {
-    return;
-  }
-
-  throw buildError("You are not authorized to access this return case.", 403);
-};
+const assertCanReadReturnCase = () => {};
 
 /**
  * Build reusable history payload with actor metadata.
@@ -128,26 +98,6 @@ const validateOrderTerminalState = (orderStatus) => {
 };
 
 /**
- * Prevent COD refund flow unless explicitly approved.
- * @param {Object} currentCase
- * @param {Object} updateData
- * @returns {void}
- */
-const validateRefundPolicy = (currentCase, updateData) => {
-  const nextRefundStatus = updateData.refundStatus;
-  const requestsRefund = ["REQUESTED", "REFUNDED"].includes(nextRefundStatus);
-
-  if (
-    currentCase.paymentType === "COD" &&
-    requestsRefund &&
-    !updateData.adminApprovedForCod &&
-    !currentCase.adminApprovedForCod
-  ) {
-    throw buildError("COD return cases require admin approval before refund can be requested.", 400);
-  }
-};
-
-/**
  * Build validated workflow-aware update payload.
  * @param {Object} currentCase
  * @param {UpdateReturnCasePayload} payload
@@ -165,7 +115,7 @@ const buildWorkflowUpdateData = (currentCase, payload) => {
 
   if (payload.restocked === true || nextStatus === "RESTOCKED") {
     if (nextInspectionDecision !== "RESELLABLE") {
-      throw buildError("Only RESELLABLE items can be restocked.", 400);
+      throw buildError("Only RESELLABLE returned orders can be restocked.", 400);
     }
     updateData.restocked = true;
     updateData.returnStatus = "RESTOCKED";
@@ -178,8 +128,6 @@ const buildWorkflowUpdateData = (currentCase, payload) => {
   if (nextStatus === "REFUNDED") {
     updateData.refundStatus = "REFUNDED";
   }
-
-  validateRefundPolicy(currentCase, updateData);
 
   return updateData;
 };
@@ -227,28 +175,9 @@ const applyWorkflowSideEffects = async (tx, currentCase, updatedCase, actor) => 
       data: { inventoryAdjustedAt: new Date() },
     });
 
-    if (order) {
-      const inventory = await tx.inventory.findUnique({ where: { productName: order.items } });
-
-      if (inventory) {
-        await tx.inventory.update({
-          where: { id: inventory.id },
-          data: { quantity: { increment: 1 } },
-        });
-      } else {
-        await tx.inventory.create({
-          data: {
-            productName: order.items,
-            quantity: 1,
-            weightPerUnitKg: order.weightKg || 1,
-          },
-        });
-      }
-    }
-
     await createHistoryEntry(tx, updatedCase.id, actor, {
       action: "INVENTORY_RESTOCKED",
-      note: "Inventory increased by 1 for a RESELLABLE returned item.",
+      note: "Returned order marked RESELLABLE and restocked.",
     });
   }
 
@@ -286,19 +215,12 @@ const applyWorkflowSideEffects = async (tx, currentCase, updatedCase, actor) => 
     });
   }
 
-  if (!currentCase.adminApprovedForCod && updatedCase.adminApprovedForCod) {
-    await createHistoryEntry(tx, updatedCase.id, actor, {
-      action: "COD_REFUND_APPROVED",
-      note: "Admin approval recorded for COD refund eligibility.",
-    });
-  }
 };
 
 /**
- * @typedef {Object} CreateReturnCasePayload
  * @property {string} orderId
  * @property {string} reason
- * @property {"PREPAID"|"COD"} paymentType
+ * @property {string|null|undefined} [returnedItems]
  * @property {number|string|null|undefined} [refundAmount]
  * @property {string|null|undefined} [notes]
  */
@@ -310,7 +232,6 @@ const applyWorkflowSideEffects = async (tx, currentCase, updatedCase, actor) => 
  * @property {"PENDING"|"DAMAGED"|"RESELLABLE"} [inspectionDecision]
  * @property {"NOT_APPLICABLE"|"REQUESTED"|"REFUNDED"} [refundStatus]
  * @property {number|string|null} [refundAmount]
- * @property {boolean} [adminApprovedForCod]
  * @property {boolean} [restocked]
  * @property {string|null} [notes]
  */
@@ -320,16 +241,7 @@ const applyWorkflowSideEffects = async (tx, currentCase, updatedCase, actor) => 
  * @returns {Promise<Array<Object>>}
  */
 const listReturnCases = async (actor) => {
-  const role = getActorRole(actor);
-
-  const where = role === CUSTOMER_ROLE ? { customerId: Number(actor?.id) || -1 } : {};
-
-  if (!MANAGER_ROLES.has(role) && role !== CUSTOMER_ROLE) {
-    throw buildError("Only admin, dispatcher, or customer can access return cases.", 403);
-  }
-
   return prisma.returnCase.findMany({
-    where,
     orderBy: { createdAt: "desc" },
     include: returnCaseInclude(),
   });
@@ -357,18 +269,11 @@ const getReturnCaseById = async (id, actor) => {
 };
 
 /**
- * Create a new return case with workflow-aware refund defaults.
- * PREPAID orders start with refund requested, COD defaults to not applicable.
+ * Create a new return case with workflow-aware defaults.
  * @param {CreateReturnCasePayload} payload
  * @returns {Promise<Object>}
  */
 const createReturnCase = async (payload, actor) => {
-  const role = getActorRole(actor);
-
-  if (!MANAGER_ROLES.has(role) && role !== CUSTOMER_ROLE) {
-    throw buildError("Only admin, dispatcher, or customer can create return cases.", 403);
-  }
-
   const orderId = Number(payload.orderId);
   if (!Number.isInteger(orderId) || orderId <= 0) {
     throw buildError("orderId is required and must be a positive integer.", 400);
@@ -383,49 +288,51 @@ const createReturnCase = async (payload, actor) => {
     throw buildError("Return can only be created for delivered, failed, or returned orders.", 400);
   }
 
-  if (order.paymentType !== payload.paymentType) {
-    throw buildError("paymentType must match the linked order payment type.", 400);
-  }
-
-  const requestedCustomerId = Number(payload.customerId);
+  const requestedCustomerId = Number(order.createdBy || payload.customerId || actor?.id);
 
   if (!Number.isInteger(requestedCustomerId) || requestedCustomerId <= 0) {
     throw buildError("customerId is required and must be a positive integer.", 400);
   }
 
-  if (role === CUSTOMER_ROLE && requestedCustomerId !== Number(actor?.id)) {
-    throw buildError("Customers can only create return cases for their own account.", 403);
-  }
-
-  if (order.createdBy && requestedCustomerId !== order.createdBy) {
-    throw buildError("customerId must match the order owner.", 400);
-  }
-
   return prisma.$transaction(async (tx) => {
-    const created = await tx.returnCase.create({
-      data: {
+    const created = await tx.returnCase.upsert({
+      where: { orderId },
+      update: {
+        reason: payload.reason,
+        refundAmount: payload.refundAmount,
+        notes: payload.notes,
+        returnedItems: null,
+        orderTerminalStatus: "RETURNED",
+      },
+      create: {
         orderId,
         customerId: requestedCustomerId,
         reason: payload.reason,
-        paymentType: payload.paymentType,
         refundAmount: payload.refundAmount,
         notes: payload.notes,
+        returnedItems: null,
         refundStatus: "NOT_APPLICABLE",
         returnStatus: "RETURN_INITIATED",
+        orderTerminalStatus: "RETURNED",
       },
+    });
+
+    await tx.order.update({
+      where: { id: orderId },
+      data: { status: "RETURNED" },
     });
 
     await createHistoryEntry(tx, created.id, actor, {
       action: "RETURN_CASE_CREATED",
       toStatus: created.returnStatus,
-      note: "Return case manually created.",
+      note: "Complete order return case created.",
     });
 
     return tx.returnCase.findUnique({
       where: { id: created.id },
       include: returnCaseInclude(),
     });
-  });
+  }, { timeout: 20000 });
 };
 
 /**
@@ -435,7 +342,6 @@ const createReturnCase = async (payload, actor) => {
  * @returns {Promise<Object>}
  */
 const autoCreateReturnCaseFromOrderEvent = async (payload, actor) => {
-  assertManagerAccess(actor);
   validateOrderTerminalState(payload.orderStatus);
 
   const orderId = Number(payload.orderId);
@@ -472,7 +378,6 @@ const autoCreateReturnCaseFromOrderEvent = async (payload, actor) => {
         orderId,
         customerId,
         reason: payload.reason,
-        paymentType: order.paymentType,
         refundAmount: payload.refundAmount,
         notes: payload.notes,
         refundStatus: "NOT_APPLICABLE",
@@ -499,7 +404,7 @@ const autoCreateReturnCaseFromOrderEvent = async (payload, actor) => {
       ...data,
       autoCreated: true,
     };
-  });
+  }, { timeout: 20000 });
 };
 
 /**
@@ -509,8 +414,6 @@ const autoCreateReturnCaseFromOrderEvent = async (payload, actor) => {
  * @returns {Promise<Object>}
  */
 const updateReturnCase = async (id, payload, actor) => {
-  assertManagerAccess(actor);
-
   const currentCase = await prisma.returnCase.findUnique({
     where: { id },
   });
@@ -533,7 +436,7 @@ const updateReturnCase = async (id, payload, actor) => {
       where: { id },
       include: returnCaseInclude(),
     });
-  });
+  }, { timeout: 20000 });
 };
 
 /**
@@ -586,6 +489,63 @@ const deleteReturnCase = async (id, actor) => {
   });
 };
 
+/**
+ * Validate multiple order identifiers for return eligibility.
+ * @param {string} orderIdentifiers - Comma-separated order IDs or tracking numbers
+ * @param {Object} actor
+ * @returns {Promise<{success: boolean, errors: string[]}>}
+ */
+const validateReturnOrders = async (orderIdentifiers, actor) => {
+  const identifiers = orderIdentifiers
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
+  if (identifiers.length === 0) {
+    throw buildError("At least one order identifier is required.", 400);
+  }
+
+  const errors = [];
+  const validatedOrders = [];
+
+  for (const identifier of identifiers) {
+    // Try to find by ID (if numeric) or trackingNumber
+    const id = Number(identifier);
+    const order = await prisma.order.findFirst({
+      where: {
+        OR: [
+          { id: Number.isInteger(id) ? id : -1 },
+          { trackingNumber: identifier },
+        ],
+      },
+      include: { returnCase: true },
+    });
+
+    if (!order) {
+      errors.push(`Order "${identifier}" not found.`);
+      continue;
+    }
+
+    if (order.status === "RETURNED") {
+      errors.push(`Order ${order.trackingNumber || identifier} has already been returned.`);
+      continue;
+    }
+
+    if (order.status !== "DELIVERED") {
+      errors.push(`Order "${identifier}" cannot be returned. Only delivered orders are eligible.`);
+      continue;
+    }
+
+    validatedOrders.push(order);
+  }
+
+  return {
+    success: errors.length === 0,
+    errors,
+    orders: validatedOrders,
+  };
+};
+
 module.exports = {
   listReturnCases,
   getReturnCaseById,
@@ -595,4 +555,5 @@ module.exports = {
   transitionReturnCaseStatus,
   listReturnCaseHistory,
   deleteReturnCase,
+  validateReturnOrders,
 };

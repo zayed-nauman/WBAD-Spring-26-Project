@@ -9,10 +9,19 @@ const parseId = (rawId) => Number.parseInt(rawId, 10);
 
 const listOrders = async (req, res) => {
   try {
-    const orders = await orderService.listOrders();
+    const orders = await orderService.listOrders(req.query, req.user);
     res.json(orders);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch orders' });
+  }
+};
+
+const getNextOrderNumber = async (req, res) => {
+  try {
+    const orderNumber = await orderService.nextTrackingNumber();
+    res.json({ orderNumber });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to generate order number' });
   }
 };
 
@@ -33,17 +42,6 @@ const getOrderById = async (req, res) => {
       return;
     }
 
-    const role = String(req.user?.role || '').toUpperCase();
-    if (role === 'CUSTOMER' && order.createdBy !== req.user.id) {
-      res.status(403).json({ error: 'Not authorized to view this order' });
-      return;
-    }
-
-    if (role === 'RIDER' && order.riderAssignment?.riderId !== req.user.riderId) {
-      res.status(403).json({ error: 'Not authorized to view this order' });
-      return;
-    }
-
     res.json(order);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch order' });
@@ -60,9 +58,7 @@ const createOrder = async (req, res) => {
     phoneNumber,
     address,
     city,
-    items,
     weightKg,
-    paymentType,
     codAmount,
     isFragile,
   } = req.body;
@@ -72,17 +68,21 @@ const createOrder = async (req, res) => {
       {
         senderName,
         senderPhone,
+        recipientName: req.body.recipientName,
         receiverName,
         receiverPhone,
         customerName,
         phoneNumber,
         address,
         city,
-        items,
         weightKg,
-        paymentType,
+        numberOfPieces: req.body.numberOfPieces,
         codAmount,
+        amount: req.body.amount,
         isFragile,
+        fragile: req.body.fragile,
+        date: req.body.date,
+        orderNumber: req.body.orderNumber,
       },
       req.user.id
     );
@@ -93,13 +93,33 @@ const createOrder = async (req, res) => {
   }
 };
 
+const updateOrder = async (req, res) => {
+  try {
+    const order = await orderService.updateOrder(parseId(req.params.id), req.body, req.user);
+    res.json({ message: 'Order updated', order });
+  } catch (error) {
+    if (error && error.code === 'ORDER_BLACKLISTED') {
+      res.status(409).json({ error: error.message });
+      return;
+    }
+
+    if (error && error.statusCode) {
+      res.status(error.statusCode).json({ error: error.message });
+      return;
+    }
+
+    res.status(500).json({ error: 'Failed to update order' });
+  }
+};
+
 const updateOrderStatus = async (req, res) => {
-  const { status, confirmBlacklisted, returnReason } = req.body;
+  const { status, confirmBlacklisted, returnReason, statusContext } = req.body;
 
   try {
     const order = await orderService.updateOrderStatus(parseId(req.params.id), status, req.user, {
       confirmBlacklisted: Boolean(confirmBlacklisted),
       returnReason,
+      statusContext,
     });
     res.json({ message: 'Status updated', order });
   } catch (error) {
@@ -124,21 +144,31 @@ const updateOrderStatus = async (req, res) => {
 
 const generateOrderLabel = async (req, res) => {
   try {
-    const result = await orderService.generateOrderLabel(parseId(req.params.id));
+    const result = await orderService.generateOrderLabel(parseId(req.params.id), req.user);
     // stream PDF
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+    res.setHeader('Content-Disposition', `inline; filename="${result.filename}"`);
     res.send(result.pdfBuffer);
   } catch (error) {
+    if (error && error.statusCode) {
+      res.status(error.statusCode).json({ error: error.message });
+      return;
+    }
+
     res.status(500).json({ error: 'Failed to generate label' });
   }
 };
 
 const deleteOrder = async (req, res) => {
   try {
-    await orderService.deleteOrder(parseId(req.params.id));
+    await orderService.deleteOrder(parseId(req.params.id), req.user);
     res.json({ message: 'Order deleted' });
   } catch (error) {
+    if (error && error.statusCode) {
+      res.status(error.statusCode).json({ error: error.message });
+      return;
+    }
+
     res.status(500).json({ error: 'Failed to delete order' });
   }
 };
@@ -146,8 +176,10 @@ const deleteOrder = async (req, res) => {
 module.exports = {
   listOrders,
   listMyOrders,
+  getNextOrderNumber,
   getOrderById,
   createOrder,
+  updateOrder,
   updateOrderStatus,
   generateOrderLabel,
   deleteOrder,
