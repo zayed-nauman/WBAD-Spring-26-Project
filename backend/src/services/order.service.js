@@ -25,7 +25,7 @@ const ASSIGNMENT_ALLOWED_STATUSES = new Set([
   'RETURNED',
 ]);
 
-const LABEL_PRINTABLE_STATUSES = new Set(['FULFILLMENT', 'READY_FOR_PICKUP']);
+const LABEL_PRINTABLE_STATUSES = new Set(['FULFILLMENT', 'LABEL_GENERATION', 'READY_FOR_PICKUP']);
 
 const buildError = (message, code, statusCode = 400) => {
   const error = new Error(message);
@@ -37,13 +37,16 @@ const buildError = (message, code, statusCode = 400) => {
 const UI_ORDER_STATUSES = new Set([
   'ORDER_RECEIVED',
   'FULFILLMENT',
+  'LABEL_GENERATION',
   'READY_FOR_PICKUP',
   'PICKUP_IN_PROGRESS',
   'PICKED_UP',
   'SHIPMENT_DISPATCHED',
   'IN_TRANSIT',
   'OUT_FOR_DELIVERY',
+  'DELIVERY_ATTEMPT',
   'DELIVERED',
+  'FAILED',
   'RETURNED',
 ]);
 
@@ -301,10 +304,6 @@ const updateOrderStatus = async (id, status, user = {}, metadata = {}) => {
   const fromOrderAssignments = String(metadata.statusContext || '').trim().toUpperCase() === 'ORDER_ASSIGNMENT';
   const canUpdateAssignedOrder = fromOrderAssignments && Boolean(existing.riderAssignment);
 
-  if (!fromOrderAssignments && existing.labelGenerated && existing.status !== normalizedStatus) {
-    throw buildError('Order status cannot be changed after the label has been printed.', 'LABEL_PRINTED_STATUS_LOCKED', 400);
-  }
-
   if (fromOrderAssignments && !canUpdateAssignedOrder) {
     throw buildError('Only assigned orders can be updated from Order Assignments.', 'ORDER_ASSIGNMENT_REQUIRED', 400);
   }
@@ -389,10 +388,6 @@ const updateOrderStatus = async (id, status, user = {}, metadata = {}) => {
 const generateOrderLabel = async (id, user = {}) => {
   const order = await prisma.order.findUnique({ where: { id }, include: { user: true } });
   if (!order) throw new Error('Order not found');
-
-  if (order.isBlacklisted) {
-    throw buildError('Order is blacklisted. Confirmation required before printing label.', 'ORDER_BLACKLISTED', 409);
-  }
 
   if (!LABEL_PRINTABLE_STATUSES.has(order.status)) {
     throw buildError('Label can only be printed for fulfilled or ready for pickup orders.', 'LABEL_STATUS_NOT_ALLOWED', 400);

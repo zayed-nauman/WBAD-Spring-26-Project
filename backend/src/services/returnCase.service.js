@@ -121,6 +121,14 @@ const buildWorkflowUpdateData = (currentCase, payload) => {
     updateData.returnStatus = "RESTOCKED";
   }
 
+  if (nextStatus === "REFUND_REQUESTED" && currentCase.order?.paymentType === "COD" && !currentCase.adminApprovedForCod) {
+    throw buildError("COD refund should be blocked before admin approval.", 400);
+  }
+
+  if (payload.adminApprovedForCod != null) {
+    updateData.adminApprovedForCod = Boolean(payload.adminApprovedForCod);
+  }
+
   if (nextStatus === "REFUND_REQUESTED") {
     updateData.refundStatus = "REQUESTED";
   }
@@ -416,6 +424,7 @@ const autoCreateReturnCaseFromOrderEvent = async (payload, actor) => {
 const updateReturnCase = async (id, payload, actor) => {
   const currentCase = await prisma.returnCase.findUnique({
     where: { id },
+    include: { order: true },
   });
 
   if (!currentCase) {

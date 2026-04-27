@@ -94,7 +94,7 @@ const recommendRiders = async (req, res) => {
       return;
     }
 
-    res.json(recommendations);
+    res.json(recommendations.riders ?? []);
   } catch (error) {
     handleError(res, error, 'Failed to get recommendations');
   }
